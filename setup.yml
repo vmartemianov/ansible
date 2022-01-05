@@ -1,0 +1,242 @@
+---
+- hosts: all_servers
+  remote_user: ec2-user
+  become: true
+  vars:
+    doc_root: /home/ec2-user
+    installs_folder: /opt/custom
+    region: us-east-1
+  tasks:
+    - name: Print all available facts
+      ansible.builtin.debug:
+        var: ansible_facts
+    - name: instalar net-tools
+      command: echo fs.inotify.max_user_watches=81920 | tee -a /etc/sysctl.conf && sysctl -p
+    - name: Disable SElinux
+      shell: |
+        /usr/sbin/setenforce 0
+        sed -i 's/SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
+
+    - name: Install epel redhat8
+      command: sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+      when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+
+    - name: Instalar EPEL in amazon linux 2
+      command: amazon-linux-extras install epel -y
+      when: ansible_os_family == "RedHat" and ansible_facts['pkg_mgr'] != "dnf"
+
+
+
+    - name: Install net-tools curl unzip vim bash-completation yum-utils git mc nano wget htop bc sendmail nmap lsof mlocate
+      yum:
+        name: "{{ item }}"
+      loop:
+        - net-tools
+        - curl
+        - unzip
+        - vim
+        - bash-completion
+        - yum-utils
+        - git
+        - mc
+        - nano
+        - wget
+        - htop
+        - bc
+        - sendmail
+        - nmap
+        - lsof
+        - mlocate
+      ignore_errors: yes
+
+    - name: Install aws cli 2 in x_86_64
+      shell: |
+        mkdir -p {{ installs_folder }}
+        cd {{ installs_folder }}
+        rm -rf *
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        ./aws/install --update
+      when: ansible_facts['machine'] == "x86_64"
+
+    - name: Enable and start sendmail
+      service:
+        name: sendmail
+        state: started
+
+    - name: Install elinks for Amazon Linux 2
+      yum:
+        name: elinks
+        state: latest
+      when: ansible_os_family == "RedHat" and ansible_facts['pkg_mgr'] != "dnf"
+
+    - name: Install htop in Amazon Linux 2
+      yum:
+        name: htop
+        state: present
+      when: ansible_os_family == "RedHat" and ansible_facts['pkg_mgr'] != "dnf"
+
+
+
+
+
+
+
+    - name: Install nginx in RedHat8
+      yum:
+        name: nginx
+        state: latest
+      when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+
+
+
+    - name: Instalacion de nginx bajo Amazon Linux 2 con amazon-linux-extras
+      command: amazon-linux-extras install nginx1.12=latest -y
+      when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+      args:
+        creates: /sbin/nginx
+
+
+
+    - name: Copio archivo index.php local al server
+      copy:
+        src=index.php dest={{ doc_root }}/index.php
+        owner=nginx
+        group=nginx mode=0644
+
+
+
+    - name: Limit to two the amount of different versions of the same package, like kernels
+      shell: sed -i 's/installonly_limit=.*$/installonly_limit=2/g' /etc/yum.conf
+
+    - name: secure ssh
+      shell: |
+        sed -ri 's/#?PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+        sed -ri 's/#?Port .*$/Port 2233/g' /etc/ssh/sshd_config
+        sed -ri 's/#?MaxAuthTries .*$/MaxAuthTries 3/g' /etc/ssh/sshd_config
+        sed -ri 's/#?MaxSessions .*$/MaxSessions 5/g' /etc/ssh/sshd_config
+        sed -ri 's/#?GSSAPIAuthentication .*$/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+
+
+
+    - name: Check alias en root .bash_profile
+      ansible.builtin.shell: cat /root/.bash_profile
+      register: root_bash_profile
+
+    - name: Set /root/.bash_profile alias
+      shell:
+        cmd: |
+          cat >> /root/.bash_profile << EOF
+          alias addip="chattr -i /etc/hosts.allow && vim /etc/hosts.allow && chattr +i /etc/hosts.allow && systemctl restart sshd"
+          alias addsshkey="chattr -i ~/.ssh/authorized_keys && vim ~/.ssh/authorized_keys && chattr +i ~/.ssh/authorized_keys && systemctl restart sshd"
+          alias ll="ls -lah"
+          alias myip="curl https://checkip.amazonaws.com"
+          alias pico="nano"
+          alias ud="du -h --max-depth=1 . 2>/dev/null"
+          export EDITOR="vim"
+          export VISUAL="vim"
+          HISTSIZE=2000
+          HISTFILESIZE=2000
+          EOF
+      when: root_bash_profile.stdout.find('myip') == -1
+
+
+    - name: Check alias en ec2-user .bash_profile
+      ansible.builtin.shell: cat /home/ec2-user/.bash_profile
+      register: ec2_user_bash_profile
+
+    - name: Set /home/ec2-user/.bash_profile
+      shell:
+        cmd: |
+          cat >> /home/ec2-user/.bash_profile << EOF
+          alias addip="chattr -i /etc/hosts.allow && vim /etc/hosts.allow && chattr +i /etc/hosts.allow && systemctl restart sshd"
+          alias addsshkey="chattr -i ~/.ssh/authorized_keys && vim ~/.ssh/authorized_keys && chattr +i ~/.ssh/authorized_keys && systemctl restart sshd"
+          alias ll="ls -lah"
+          alias myip="curl https://checkip.amazonaws.com"
+          alias pico="nano"
+          alias ud="du -h --max-depth=1 . 2>/dev/null"
+          export EDITOR="vim"
+          export VISUAL="vim"
+          HISTSIZE=2000
+          HISTFILESIZE=2000
+          EOF
+      when: ec2_user_bash_profile.stdout.find('myip') == -1
+
+
+
+
+    - name: Check alias en /root/.bashrc
+      ansible.builtin.shell: cat /root/.bashrc
+      register: root_bashrc
+
+    - name: Set /root/.bashrc alias
+      shell:
+        cmd: |
+          cat >> /root/.bashrc << EOF
+          alias addip="chattr -i /etc/hosts.allow && vim /etc/hosts.allow && chattr +i /etc/hosts.allow && systemctl restart sshd"
+          alias addsshkey="chattr -i ~/.ssh/authorized_keys && vim ~/.ssh/authorized_keys && chattr +i ~/.ssh/authorized_keys && systemctl restart sshd"
+          alias ll="ls -lah"
+          alias myip="curl https://checkip.amazonaws.com"
+          alias pico="nano"
+          alias ud="du -h --max-depth=1 . 2>/dev/null"
+          export EDITOR="vim"
+          export VISUAL="vim"
+          HISTSIZE=2000
+          HISTFILESIZE=2000
+          EOF
+      when: root_bashrc.stdout.find('myip') == -1
+
+
+    - name: Check alias en /home/ec2-user/.bashrc
+      ansible.builtin.shell: cat /home/ec2-user/.bashrc
+      register: ec2_user_bashrc
+
+    - name: Add alias in ec2-user .bashrc
+      shell:
+        cmd: |
+          cat >> /home/ec2-user/.bashrc << EOF
+          alias addip="chattr -i /etc/hosts.allow && vim /etc/hosts.allow && chattr +i /etc/hosts.allow && systemctl restart sshd"
+          alias addsshkey="chattr -i ~/.ssh/authorized_keys && vim ~/.ssh/authorized_keys && chattr +i ~/.ssh/authorized_keys && systemctl restart sshd"
+          alias ll="ls -lah"
+          alias myip="curl https://checkip.amazonaws.com"
+          alias pico="nano"
+          alias ud="du -h --max-depth=1 . 2>/dev/null"
+          export EDITOR="vim"
+          export VISUAL="vim"
+          HISTSIZE=2000
+          HISTFILESIZE=2000
+          EOF
+      when: ec2_user_bashrc.stdout.find('myip') == -1
+
+
+
+
+
+    - name: Check Swap in /etc/fstab
+      ansible.builtin.shell: cat /etc/fstab
+      register: swap
+
+    - name: Add Swap
+      shell:
+        cmd: |
+          dd if=/dev/zero of=/swapfile bs=1MiB count=4096
+          mkswap /swapfile
+          chmod 600 /swapfile
+          echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+          systemctl daemon-reload
+          swapon /swapfile
+      when: swap.stdout.find('swap') == -1
+
+
+    - name: descarga parametrizada
+      command: "yum install -y https://s3.{{ region }}.amazonaws.com/amazon-ssm-{{ region }}/latest/linux_amd64/amazon-ssm-agent.rpm"
+      ignore_errors: yes
+
+    - name: Enable ssm manager
+      command: "systemctl enable --now amazon-ssm-agent"
+      ignore_errors: yes
+
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: started
