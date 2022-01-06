@@ -2,15 +2,31 @@
 - hosts: all_servers
   remote_user: ec2-user
   become: true
+  gather_facts: true
   vars:
-    doc_root: /home/ec2-user
-    installs_folder: /opt/custom
     region: us-east-1
     domain: vladimir.com
+    php_version: 7.4
   tasks:
     - name: Print all available facts
       ansible.builtin.debug:
         var: ansible_facts
+    - name: Install nginx in RedHat8
+      yum:
+        name: nginx
+        state: latest
+      when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+
+
+
+    - name: Instalacion de nginx bajo Amazon Linux 2 con amazon-linux-extras
+      command: amazon-linux-extras install nginx1.12=latest -y
+      when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+      args:
+        creates: /sbin/nginx
+
+    - name: Add user 'root' to group 'nginx'
+      command: usermod -a -G nginx root
 
 
 
@@ -21,6 +37,50 @@
         owner: root
         group: root
         mode: '0644'
+
+
+
+    - name: Install certbot-nginx in AL2
+      yum:
+        name: certbot-nginx
+        state: present
+      when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+
+#    - name: Check cron of certbot
+#      ansible.builtin.shell: cat /var/spool/cron/root
+#      register: certbot_cron
+#
+#    - name: Set update certificates in cron
+#      shell:
+#        cmd: |
+#          cat >> /var/spool/cron/root << EOF
+#          # Update certs
+#          37 3 */3 * * certbot -q renew > /dev/null 2>&1
+#          47 3 */3 * * systemctl restart nginx > /dev/null 2>&1
+#          EOF
+#      when: certbot_cron.stdout.find('certbot') == -1
+
+    - name: Install php7.4 AL2
+      command: "amazon-linux-extras install php{{ php_version }} -y"
+      when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+    - rpm_key:
+        state: present
+        key: https://rpms.remirepo.net/RPM-GPG-KEY-remi2018
+    - name: Install epel remi and php. Version declared in vars
+      dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - dnf-utils
+        - "https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm"
+        - "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+      when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+      ignore_errors: yes
+
+    - name: install php 7.4 RedHat 8
+      command: "dnf module install php:remi-7.4 -y"
+      when: (ansible_facts['pkg_mgr'] == "dnf") and (ansible_facts['os_family'] == "RedHat")
+
 
     - name: restart nginx
       service:
