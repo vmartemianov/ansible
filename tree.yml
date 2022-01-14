@@ -1,4 +1,9 @@
-- name: install tree
-  yum:
-    name: tree
-    state: present
+---
+- hosts: all
+  remote_user: ec2-user
+  become: true
+  tasks:
+  - name: install tree
+    yum:
+      name: tree
+      state: present
