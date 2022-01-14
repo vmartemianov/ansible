@@ -1,5 +1,5 @@
 ---
-- hosts: all_servers
+- hosts: all
   roles:
     - role: nginx
       vars:
