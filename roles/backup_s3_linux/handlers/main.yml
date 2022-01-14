@@ -1,0 +1,21 @@
+---
+# handlers file for backup_s3_linux
+- name: restart crond
+  service:
+    name: crond
+    state: restarted
+
+- name: reload crond
+  service:
+    name: crond
+    state: reloaded
+
+- name: stop crond
+  service:
+    name: crond
+    state: stoped
+
+- name: start crond
+  service:
+    name: crond
+    state: stared

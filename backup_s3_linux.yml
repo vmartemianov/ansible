@@ -1,0 +1,9 @@
+---
+- hosts: all_servers
+  roles:
+    - role: backup_s3_linux
+      vars:
+        cron_path : /var/spool/cron/root
+  remote_user: ec2-user
+  become: true
+  gather_facts: true

@@ -1,0 +1,7 @@
+
+
+- name: Instalacion de nginx bajo Amazon Linux 2 con amazon-linux-extras
+  command: amazon-linux-extras install nginx1.12=latest -y
+  when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+  args:
+    creates: /sbin/nginx

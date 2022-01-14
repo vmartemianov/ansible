@@ -1,0 +1,36 @@
+
+- name: Install php7.4 AL2
+  command: "amazon-linux-extras install php{{ php_version }} -y"
+  when: ansible_facts['pkg_mgr'] != "dnf" and ansible_facts['os_family'] == "RedHat"
+- rpm_key:
+    state: present
+    key: https://rpms.remirepo.net/RPM-GPG-KEY-remi2018
+
+- rpm_key:
+    state: present
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-8
+
+- name: Install dnf utils on redhat
+  dnf:
+    name: dnf-utils
+    state: present
+  when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+  ignore_errors: yes
+
+- name: Install epel repo.
+  yum:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm"
+    state: present
+  when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+  ignore_errors: yes
+
+- name: Install epel remi and php. Version declared in vars
+  dnf:
+    name: "http://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+    state: present
+  when: ansible_facts['pkg_mgr'] == "dnf" and ansible_facts['os_family'] == "RedHat"
+  ignore_errors: yes
+
+- name: install php 7.4 RedHat 8
+  command: "dnf module install php:remi-7.4 -y"
+  when: (ansible_facts['pkg_mgr'] == "dnf") and (ansible_facts['os_family'] == "RedHat")

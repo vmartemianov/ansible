@@ -1,0 +1,17 @@
+---
+# vars file for nginx
+region: us-east-1
+domain: vladimir.com
+php_version: 7.4
+nginx_php_config: [
+  'location ~ \.php {',
+  '  try_files $uri =404;',
+  '  fastcgi_pass 127.0.0.1:9074;',
+  '  fastcgi_index index.php;',
+  '  ',
+  '  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;',
+  '  include fastcgi_params;',
+  '  ','  fastcgi_buffer_size 128k;',
+  '  fastcgi_buffers 256 4k;',
+  '  fastcgi_busy_buffers_size 256k;',
+  '  fastcgi_temp_file_write_size 256k;','}']

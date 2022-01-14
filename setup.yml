@@ -21,6 +21,7 @@
       shell: |
         /usr/sbin/setenforce 0
         sed -i 's/SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
+
     - name: Install epel remi redhat
       dnf:
         name: "{{ item }}"
@@ -119,6 +120,9 @@
         sed -ri 's/#?MaxAuthTries .*$/MaxAuthTries 3/g' /etc/ssh/sshd_config
         sed -ri 's/#?MaxSessions .*$/MaxSessions 5/g' /etc/ssh/sshd_config
         sed -ri 's/#?GSSAPIAuthentication .*$/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+
+
+
     - name: Check alias en root .bash_profile
       ansible.builtin.shell: cat /root/.bash_profile
       register: root_bash_profile

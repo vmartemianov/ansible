@@ -1,0 +1,12 @@
+---
+# tasks file for secure_ssh
+- name: secure ssh changing port, pass to NO, max tries to 3 max session to 5 and GSSAPI to no
+  shell: |
+    sed -ri 's/#?PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
+    sed -ri 's/#?Port .*$/Port 2233/g' /etc/ssh/sshd_config
+    sed -ri 's/#?MaxAuthTries .*$/MaxAuthTries 3/g' /etc/ssh/sshd_config
+    sed -ri 's/#?MaxSessions .*$/MaxSessions 5/g' /etc/ssh/sshd_config
+    sed -ri 's/#?GSSAPIAuthentication .*$/GSSAPIAuthentication no/g' /etc/ssh/sshd_config
+  notify:
+  - restart ssh  
+

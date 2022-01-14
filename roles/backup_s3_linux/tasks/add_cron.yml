@@ -1,0 +1,19 @@
+- name: Create /var/spool/cron/root
+  file:
+    path: /var/spool/cron/root
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+- name: Check backup cron in /var/spool/cron/root
+  ansible.builtin.shell: cat /var/spool/cron/root
+  register: backup_cron
+
+- name: Set cron in /var/spool/cron/root 
+  shell:
+    cmd: |
+      cat >> /var/spool/cron/root << EOF
+      0 3 * * * /support_tools/crons/backupFilesToS3.sh > /dev/null 2>&1
+      EOF
+  when: backup_cron.stdout.find('backup') == -1
+  notify: restart crond

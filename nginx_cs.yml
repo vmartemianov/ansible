@@ -1,0 +1,12 @@
+---
+- hosts: all_servers
+  roles:
+    - role: nginx
+      vars:
+        # php_version: 7.4 | 8.0
+        php_version: 
+        # nginx_config_default: true | flase
+        nginx_config_default: true
+  remote_user: ec2-user
+  become: true
+  gather_facts: true

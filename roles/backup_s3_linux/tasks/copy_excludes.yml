@@ -1,0 +1,7 @@
+- name: Copy excludes.txt
+  ansible.builtin.copy:
+    src: /tmp/support_tools/standard/backups/excludes.txt
+    dest: /support_tools/backups
+    owner: root
+    group: root
+    mode: '0644'

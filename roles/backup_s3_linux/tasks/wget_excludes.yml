@@ -1,0 +1,12 @@
+
+###################################################
+# No funciona porque el repositorio es privado
+# dejo el código como ejemplo de un wget en ansible
+###################################################
+
+
+- name: Download excludes.txt
+  get_url:
+    url: https://github.com/grupocloudspace/support_tools/blob/main/standard/backups/excludes.txt
+    dest: /support_tools/backups
+    mode: '0644'

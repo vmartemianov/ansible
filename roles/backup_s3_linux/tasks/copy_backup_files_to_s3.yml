@@ -1,0 +1,7 @@
+- name: Copy backupFilesToS3.sh
+  ansible.builtin.copy:
+    src: /tmp/support_tools/standard/crons/backupFilesToS3.sh
+    dest: /support_tools/crons
+    owner: root
+    group: root
+    mode: '0700'

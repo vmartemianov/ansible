@@ -1,0 +1,14 @@
+---
+# tasks file for nginx
+- import_tasks: nginx_redhat8.yml
+- import_tasks: nginx_al2.yml
+- import_tasks: install_php.yml
+  when: php_version
+- import_tasks: nginx_default.yml
+  when: nginx_config_default 
+
+- name: Add user 'root' to group 'nginx'
+  command: usermod -a -G nginx root
+
+
+  

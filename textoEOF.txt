@@ -1,0 +1,15 @@
+---
+- hosts: all_servers
+  remote_user: ec2-user
+  become: true
+  vars:
+    doc_root: /home/ec2-user
+    installs_folder: /opt/custom
+  tasks:
+    - name: Execute cat
+      shell:
+        cmd: |
+          cat >> /tmp/a.txt << EOF
+          linea nro 3
+          linea nro 4
+          EOF

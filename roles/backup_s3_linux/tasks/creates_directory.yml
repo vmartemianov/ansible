@@ -1,0 +1,7 @@
+- name: Create directory backups and crons in /support_tools
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+  - /support_tools/backups
+  - /support_tools/crons

@@ -1,0 +1,29 @@
+- name: Create ~/.ssh/config
+  file:
+    path: ~/.ssh/config
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+
+- name: Check github StrictHostKeyChecking in ~/.ssh/config
+  ansible.builtin.shell: cat ~/.ssh/config
+  register: ssh_config
+
+- name: Set StrictHostKeyChecking no in ~/.ssh/config
+  shell:
+    cmd: |
+      cat >> ~/.ssh/config << EOF
+      Host github.com
+          StrictHostKeyChecking no
+      EOF
+  when: ssh_config.stdout.find('github') == -1
+
+
+- name: Clone private repository grupocloudspace/support_tools.git
+  git: 
+    repo: git@github.com:grupocloudspace/support_tools.git
+    version: main
+    key_file: /root/.ssh/id_rsa
+    dest: /tmp/support_tools
+  ignore_errors: yes
